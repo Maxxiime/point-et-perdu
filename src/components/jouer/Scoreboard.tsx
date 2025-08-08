@@ -6,7 +6,7 @@ import { formatCountdown, formatFrLong } from "@/utils/date";
 import { Pencil, Trash2, ImagePlus, Heart, MessageSquare } from "lucide-react";
 
 export default function Scoreboard({ partie }: { partie: Partie }) {
-  const { ajouterMene, editerMene, supprimerMene, rollbackVersMene, terminerPartie, annulerPartie, likerPartie, commenterPartie, ajouterPhoto } = useData();
+  const { db, ajouterMene, editerMene, supprimerMene, rollbackVersMene, terminerPartie, annulerPartie, likerPartie, commenterPartie, ajouterPhoto } = useData();
   const [a, setA] = useState(0);
   const [b, setB] = useState(0);
   const [comment, setComment] = useState("");
@@ -16,7 +16,6 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   const countdown = useMemo(()=> expireAt ? formatCountdown(expireAt - Date.now()) : null, [expireAt, partie.menes.length]);
 
   const validerMene = () => {
-    if (!window.confirm("Confirmer cette mène ? Les totaux seront mis à jour.")) return;
     ajouterMene(partie.id, a, b);
     setA(0); setB(0);
   };
@@ -24,29 +23,26 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   const onEdit = (mNo: number) => {
     const nvA = Number(prompt(`Points A (mène ${mNo})`, String(partie.menes.find(m=>m.numero===mNo)?.points.A ?? 0)));
     const nvB = Number(prompt(`Points B (mène ${mNo})`, String(partie.menes.find(m=>m.numero===mNo)?.points.B ?? 0)));
-    if (!window.confirm(`Confirmer la modification de la mène n°${mNo} ? Les totaux seront recalculés.`)) return;
     editerMene(partie.id, mNo, nvA, nvB);
   };
 
   const onDelete = (mNo: number) => {
-    if (!window.confirm("Rollback demandé via suppression ? Utilisez plutôt le bouton 'Corriger une mène'.")) return;
+    if (!window.confirm(`Supprimer la mène n°${mNo} ?`)) return;
     supprimerMene(partie.id, mNo);
   };
 
   const onRollback = () => {
     const n = Number(prompt("Revenir à la mène n° ?"));
     if (!n) return;
-    if (!window.confirm(`Revenir à la mène n°${n} ? Toutes les mènes suivantes seront supprimées.`)) return;
     rollbackVersMene(partie.id, n);
   };
 
   const onTerminer = () => {
-    if (window.confirm("Terminer la partie maintenant ? Plus aucune mène ne pourra être ajoutée (sauf via Admin).")) terminerPartie(partie.id);
+    terminerPartie(partie.id);
   };
   const onAnnuler = () => {
-    if (window.confirm("Annuler cette partie et l’archiver comme ‘Annulée’ ?")) annulerPartie(partie.id);
+    annulerPartie(partie.id);
   };
-
   const onLike = () => likerPartie(partie.id);
   const onComment = () => {
     if (!comment.trim()) return;
@@ -74,11 +70,11 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
 
       <div className="grid grid-cols-2 gap-3 text-center">
         <div className="rounded-xl p-4 bg-gradient-to-b from-[hsl(var(--card))] to-[hsl(var(--secondary))] border">
-          <div className="text-xs uppercase text-muted-foreground mb-1">{partie.equipes[0].nom}</div>
+          <div className="text-xs uppercase text-muted-foreground mb-1">{(partie.equipes[0].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")) || partie.equipes[0].nom}</div>
           <div className="text-5xl font-bold">{partie.equipes[0].scoreTotal}</div>
         </div>
         <div className="rounded-xl p-4 bg-gradient-to-b from-[hsl(var(--card))] to-[hsl(var(--secondary))] border">
-          <div className="text-xs uppercase text-muted-foreground mb-1">{partie.equipes[1].nom}</div>
+          <div className="text-xs uppercase text-muted-foreground mb-1">{(partie.equipes[1].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")) || partie.equipes[1].nom}</div>
           <div className="text-5xl font-bold">{partie.equipes[1].scoreTotal}</div>
         </div>
       </div>

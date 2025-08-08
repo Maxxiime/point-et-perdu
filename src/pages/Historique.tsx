@@ -59,7 +59,7 @@ export default function Historique() {
               <Link to={`/partie/${p.id}`} className="flex justify-between items-center">
                 <div>
                   <div className="text-sm text-muted-foreground">{formatFrLong(p.dateISO)}</div>
-                  <div className="font-semibold">{p.equipes[0].nom} {p.equipes[0].scoreTotal} – {p.equipes[1].scoreTotal} {p.equipes[1].nom}</div>
+                  <div className="font-semibold">{p.equipes[0].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")} {p.equipes[0].scoreTotal} – {p.equipes[1].scoreTotal} {p.equipes[1].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")}</div>
                   <div className="text-xs text-muted-foreground capitalize">{p.modeJeu.type.replace('_',' ')}</div>
                 </div>
                 <span className="text-xs px-2 py-1 rounded bg-secondary">{p.etat.replace('_',' ')}</span>

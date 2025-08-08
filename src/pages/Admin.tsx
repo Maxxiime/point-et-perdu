@@ -12,7 +12,6 @@ export default function Admin() {
   const onImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!window.confirm("Importer ce fichier et remplacer les données actuelles ? Pensez à exporter une sauvegarde avant.")) return;
     await importerJSON(file);
   };
 
@@ -42,12 +41,8 @@ export default function Admin() {
       </Helmet>
 
       <div className="flex gap-2">
-        <Button variant="secondary" onClick={()=>{
-          if (window.confirm("Se déconnecter de l’administration ?")) logoutAdmin();
-        }}>Se déconnecter</Button>
-        <Button onClick={()=>{
-          if (window.confirm("Recalculer toutes les statistiques à partir de l’historique ?")) reinitialiserStats();
-        }}>Réinitialiser les statistiques</Button>
+        <Button variant="secondary" onClick={logoutAdmin}>Se déconnecter</Button>
+        <Button onClick={reinitialiserStats}>Réinitialiser les statistiques</Button>
       </div>
 
       <div className="flex gap-2">
@@ -77,7 +72,7 @@ export default function Admin() {
         <ul className="space-y-1">
           {db?.parties.map(p => (
             <li key={p.id} className="flex items-center justify-between border rounded p-2">
-              <span>{p.equipes[0].nom} vs {p.equipes[1].nom} – {p.etat}</span>
+              <span>{p.equipes[0].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")} vs {p.equipes[1].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")} – {p.etat}</span>
               <Button variant="destructive" onClick={()=>{
                 if (window.confirm("Supprimer définitivement cette partie ? Cette action est irréversible.")) supprimerPartie(p.id);
               }}>Supprimer</Button>

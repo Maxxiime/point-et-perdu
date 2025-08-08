@@ -66,7 +66,7 @@ export default function CreationWizard() {
             ))}
           </div>
           <div className="flex gap-2">
-            <Button variant="hero" onClick={()=>setEtape(2)} disabled={!format}>Suivant</Button>
+            <Button variant="default" onClick={()=>setEtape(2)} disabled={!format}>Suivant</Button>
           </div>
         </div>
       )}
@@ -97,7 +97,7 @@ export default function CreationWizard() {
           <div className="flex gap-2">
             <Button variant="secondary" onClick={inverser}>Inverser équipes</Button>
             <Button variant="outline" onClick={()=>setEtape(1)}>Remplacer</Button>
-            <Button variant="hero" onClick={()=>setEtape(3)} disabled={!canStart}>Suivant</Button>
+            <Button variant="default" onClick={()=>setEtape(3)} disabled={!canStart}>Suivant</Button>
           </div>
         </div>
       )}
@@ -153,7 +153,7 @@ export default function CreationWizard() {
 
           <div className="flex gap-2">
             <Button variant="outline" onClick={()=>setEtape(2)}>Retour</Button>
-            <Button variant="hero" onClick={demarrer} disabled={!canStart}>Démarrer</Button>
+            <Button variant="default" onClick={demarrer} disabled={!canStart}>Démarrer</Button>
           </div>
         </div>
       )}

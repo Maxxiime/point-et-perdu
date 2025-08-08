@@ -3,7 +3,7 @@ import { BaseDonnees, Commentaire, Equipe, ID, Mene, ModeJeu, Partie, Utilisateu
 
 const STORAGE_KEY = "petanque_db_v1";
 const SESSION_ADMIN_KEY = "petanque_admin_ok";
-const ADMIN_PASSWORD = "petanque"; // Simple, stocké côté client par contrainte du périmètre
+const ADMIN_PASSWORD = "q"; // Simple, stocké côté client par contrainte du périmètre
 
 interface DataContextType {
   db: BaseDonnees | null;

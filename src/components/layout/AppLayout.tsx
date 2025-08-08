@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import BottomNav from "./BottomNav";
 import { Helmet } from "react-helmet-async";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function AppLayout() {
   return (
@@ -11,6 +12,9 @@ export default function AppLayout() {
         <link rel="canonical" href={typeof window !== 'undefined' ? window.location.href : '/'} />
       </Helmet>
       <main className="container py-4">
+        <header className="flex justify-end mb-2">
+          <ThemeToggle />
+        </header>
         <Outlet />
       </main>
       <BottomNav />

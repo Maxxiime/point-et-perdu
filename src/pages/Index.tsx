@@ -1,14 +1,23 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Helmet } from "react-helmet-async";
+import CreationWizard from "@/components/jouer/CreationWizard";
+import Scoreboard from "@/components/jouer/Scoreboard";
+import { useData } from "@/store/DataContext";
 
-const Index = () => {
+export default function Index() {
+  const { db } = useData();
+  const partieEnCours = db?.parties.find(p => p.etat === "en_cours");
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <section className="space-y-4">
+      <Helmet>
+        <title>Jouer – Pétanque facile</title>
+        <meta name="description" content="Démarrez une nouvelle partie de pétanque et suivez le score en direct." />
+      </Helmet>
+      {!partieEnCours ? (
+        <CreationWizard />
+      ) : (
+        <Scoreboard partie={partieEnCours} />
+      )}
+    </section>
   );
-};
-
-export default Index;
+}

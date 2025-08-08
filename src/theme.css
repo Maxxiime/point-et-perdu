@@ -1,0 +1,18 @@
+/* Extensions de tokens, dégradés, ombres et micro-interactions */
+@layer base {
+  :root {
+    --brand: 221 83% 53%;
+    --brand-glow: 221 90% 62%;
+    --shadow-elegant: 0 10px 30px -12px hsl(var(--brand) / 0.35);
+  }
+  .dark {
+    --brand: 221 83% 60%;
+    --brand-glow: 221 90% 70%;
+  }
+}
+
+/* Signature: léger effet hover sur CTA */
+@layer utilities {
+  .interactive:hover { transform: translateY(-1px); }
+  .interactive { transition: var(--transition-smooth, all 0.2s ease); }
+}

@@ -1,0 +1,15 @@
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+
+export function formatFrLong(iso: string) {
+  const d = new Date(iso);
+  return format(d, "eee d MMMM yyyy, HH:mm", { locale: fr });
+}
+
+export function formatCountdown(msLeft: number) {
+  if (msLeft < 0) return "00:00";
+  const totalSec = Math.floor(msLeft / 1000);
+  const m = Math.floor(totalSec / 60).toString().padStart(2,'0');
+  const s = (totalSec % 60).toString().padStart(2,'0');
+  return `${m}:${s}`;
+}

@@ -55,6 +55,7 @@ All colors MUST be HSL.
     --sidebar-ring: 217.2 91.2% 59.8%;
     --chart-1: 221 83% 53%;
     --chart-2: 145 58% 45%;
+    --chart-3: 31 92% 45%;
   }
 
   .dark {
@@ -95,6 +96,7 @@ All colors MUST be HSL.
     --sidebar-ring: 217.2 91.2% 59.8%;
     --chart-1: 221 83% 60%;
     --chart-2: 145 58% 55%;
+    --chart-3: 31 92% 55%;
   }
 }
 

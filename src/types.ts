@@ -2,7 +2,7 @@
 export type ID = string;
 
 export type EtatPartie = "en_cours" | "terminee" | "annulee";
-export type FormatEquipes = "tete-a-tete" | "doublette" | "triplette";
+export type FormatEquipes = "chacun_pour_soi" | "par_equipes";
 export type TypeModeJeu = "classique" | "chrono" | "menes_fixes" | "amical";
 export type BriseEgalite = "mene_decisive" | "egalite";
 
@@ -13,7 +13,7 @@ export interface Utilisateur {
 }
 
 export interface Equipe {
-  id: "A" | "B";
+  id: ID;
   nom: string;
   joueurs: ID[]; // ids utilisateurs
   scoreTotal: number;
@@ -21,7 +21,7 @@ export interface Equipe {
 
 export interface Mene {
   numero: number;
-  points: { A: number; B: number };
+  points: Record<ID, number>;
 }
 
 export interface Commentaire {
@@ -50,9 +50,9 @@ export interface Partie {
   etat: EtatPartie;
   formatEquipes: FormatEquipes;
   modeJeu: ModeJeu;
-  equipes: [Equipe, Equipe];
+  equipes: Equipe[];
   menes: Mene[];
-  vainqueur: "A" | "B" | null;
+  vainqueur: ID | null;
   likes: number;
   commentaires: Commentaire[];
   photos: Photo[];

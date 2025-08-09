@@ -1,53 +1,105 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useData } from "@/store/DataContext";
-import { Equipe, FormatEquipes, ModeJeu, Partie, TypeModeJeu } from "@/types";
+import { Equipe, FormatEquipes, ModeJeu, Partie } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-function placesParFormat(format: FormatEquipes) {
-  return format === "tete-a-tete" ? 1 : format === "doublette" ? 2 : 3;
-}
+import { X } from "lucide-react";
 
 export default function CreationWizard() {
   const { db, creerUtilisateur, nouvellePartie } = useData();
   const [etape, setEtape] = useState(1);
-  const [format, setFormat] = useState<FormatEquipes>("doublette");
-  const [equipes, setEquipes] = useState<[Equipe, Equipe]>([
-    { id: "A", nom: "Équipe A", joueurs: [], scoreTotal: 0 },
-    { id: "B", nom: "Équipe B", joueurs: [], scoreTotal: 0 },
+  const [format, setFormat] = useState<FormatEquipes>("par_equipes");
+
+  // Mode chacun pour soi: liste d'IDs utilisateurs
+  const [soloJoueurs, setSoloJoueurs] = useState<string[]>([]);
+
+  // Mode par équipes: liste dynamique d'équipes avec joueurs
+  const [equipes, setEquipes] = useState<Equipe[]>([
+    { id: "E1", nom: "Équipe 1", joueurs: [], scoreTotal: 0 },
+    { id: "E2", nom: "Équipe 2", joueurs: [], scoreTotal: 0 },
   ]);
+
   const [mode, setMode] = useState<ModeJeu>({ type: "classique", ciblePoints: 13, briseEgalite: "mene_decisive" });
 
-  const nbPlaces = useMemo(()=> placesParFormat(format), [format]);
   const utilisateurs = db?.utilisateurs || [];
 
-  const canStart = useMemo(()=>
-    equipes[0].joueurs.length === nbPlaces && equipes[1].joueurs.length === nbPlaces
-  ,[equipes, nbPlaces]);
+  const canStart = useMemo(() => {
+    if (format === "chacun_pour_soi") return soloJoueurs.filter(Boolean).length >= 2;
+    // par équipes: au moins 2 équipes avec >=1 joueur
+    const valides = equipes.filter(e => (e.joueurs.filter(Boolean).length >= 1));
+    return valides.length >= 2;
+  }, [format, soloJoueurs, equipes]);
 
-  const addOuSelect = (eIdx: 0|1, pos: number, value: string) => {
+  const ajouterSlotSolo = () => setSoloJoueurs([...soloJoueurs, ""]);
+  const supprimerSolo = (idx: number) => setSoloJoueurs(soloJoueurs.filter((_, i) => i !== idx));
+  const setSoloAt = (idx: number, value: string) => {
     if (value === "__nouveau__") {
       const nom = prompt("Nom du joueur ?");
       if (!nom) return;
       const u = creerUtilisateur(nom);
-      const next = [...equipes] as [Equipe, Equipe];
-      const jou = [...next[eIdx].joueurs];
-      jou[pos] = u.id;
-      next[eIdx] = { ...next[eIdx], joueurs: jou };
-      setEquipes(next);
+      const next = [...soloJoueurs];
+      next[idx] = u.id;
+      setSoloJoueurs(next);
     } else {
-      const next = [...equipes] as [Equipe, Equipe];
-      const jou = [...next[eIdx].joueurs];
-      jou[pos] = value;
-      next[eIdx] = { ...next[eIdx], joueurs: jou };
-      setEquipes(next);
+      const next = [...soloJoueurs];
+      next[idx] = value;
+      setSoloJoueurs(next);
     }
   };
 
-  const inverser = () => setEquipes([equipes[1], equipes[0]]);
+  const ajouterEquipe = () => {
+    const n = equipes.length + 1;
+    setEquipes([...equipes, { id: `E${n}`, nom: `Équipe ${n}`, joueurs: [], scoreTotal: 0 }]);
+  };
+  const supprimerEquipe = (id: string) => setEquipes(equipes.filter(e => e.id !== id));
+  const ajouterJoueurDansEquipe = (eId: string) => {
+    setEquipes(equipes.map(e => e.id === eId ? { ...e, joueurs: [...e.joueurs, ""] } : e));
+  };
+  const supprimerJoueurDansEquipe = (eId: string, idx: number) => {
+    setEquipes(equipes.map(e => e.id === eId ? { ...e, joueurs: e.joueurs.filter((_, i) => i !== idx) } : e));
+  };
+  const setJoueurEquipeAt = (eId: string, idx: number, value: string) => {
+    if (value === "__nouveau__") {
+      const nom = prompt("Nom du joueur ?");
+      if (!nom) return;
+      const u = creerUtilisateur(nom);
+      setEquipes(equipes.map(e => {
+        if (e.id !== eId) return e;
+        const js = [...e.joueurs];
+        js[idx] = u.id;
+        return { ...e, joueurs: js };
+      }));
+    } else {
+      setEquipes(equipes.map(e => {
+        if (e.id !== eId) return e;
+        const js = [...e.joueurs];
+        js[idx] = value;
+        return { ...e, joueurs: js };
+      }));
+    }
+  };
 
   const demarrer = () => {
-    const p = nouvellePartie({ formatEquipes: format, modeJeu: mode, equipes });
+    let payloadEquipes: Equipe[] = [];
+    if (format === "chacun_pour_soi") {
+      payloadEquipes = soloJoueurs.filter(Boolean).map((uid, i) => ({
+        id: `P${i + 1}`,
+        nom: utilisateurs.find(u => u.id === uid)?.nom || `Joueur ${i + 1}`,
+        joueurs: [uid],
+        scoreTotal: 0,
+      }));
+    } else {
+      payloadEquipes = equipes
+        .map((e, i) => ({
+          ...e,
+          id: e.id || `E${i + 1}`,
+          nom: (e.joueurs.map(id => utilisateurs.find(u => u.id === id)?.nom).filter(Boolean).join(" & ")) || e.nom,
+          joueurs: e.joueurs.filter(Boolean),
+          scoreTotal: 0,
+        }))
+        .filter(e => e.joueurs.length >= 1);
+    }
+    const p = nouvellePartie({ formatEquipes: format, modeJeu: mode, equipes: payloadEquipes });
     alert("Partie démarrée !");
   };
 
@@ -57,16 +109,13 @@ export default function CreationWizard() {
 
       {etape === 1 && (
         <div className="space-y-4">
-          <h2 className="font-semibold">1) Format d’équipes</h2>
-          <div className="grid grid-cols-3 gap-2">
-            {(["tete-a-tete","doublette","triplette"] as FormatEquipes[]).map(f => (
-              <Button key={f} variant={format===f?"default":"outline"} onClick={()=>setFormat(f)}>
-                {f === "tete-a-tete" ? "Tête-à-tête" : f === "doublette" ? "Doublette" : "Triplette"}
-              </Button>
-            ))}
+          <h2 className="font-semibold">1) Format</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <Button key="solo" variant={format === 'chacun_pour_soi' ? 'default' : 'outline'} onClick={() => setFormat('chacun_pour_soi')}>Chacun pour soi</Button>
+            <Button key="teams" variant={format === 'par_equipes' ? 'default' : 'outline'} onClick={() => setFormat('par_equipes')}>Par équipes</Button>
           </div>
           <div className="flex gap-2">
-            <Button variant="default" onClick={()=>setEtape(2)} disabled={!format}>Suivant</Button>
+            <Button variant="default" onClick={() => setEtape(2)}>Suivant</Button>
           </div>
         </div>
       )}
@@ -74,30 +123,59 @@ export default function CreationWizard() {
       {etape === 2 && (
         <div className="space-y-4">
           <h2 className="font-semibold">2) Joueurs</h2>
-          <div className="grid grid-cols-2 gap-4">
-            {[0,1].map((eIdx) => (
-              <div key={eIdx} className="border rounded-lg p-3">
-                <div className="font-medium mb-2">{eIdx===0?"Équipe A":"Équipe B"}</div>
-                {Array.from({ length: nbPlaces }).map((_, i) => (
-                  <div key={i} className="mb-2">
-                    <Select onValueChange={(v)=>addOuSelect(eIdx as 0|1, i, v)}>
-                      <SelectTrigger className="w-full"><SelectValue placeholder={`Joueur ${i+1}`} /></SelectTrigger>
-                      <SelectContent className="z-50 bg-popover">
-                        {utilisateurs.map(u => (
-                          <SelectItem key={u.id} value={u.id}>{u.nom}</SelectItem>
-                        ))}
-                        <SelectItem value="__nouveau__">+ Nouveau</SelectItem>
-                      </SelectContent>
-                    </Select>
+
+          {format === 'chacun_pour_soi' ? (
+            <div className="space-y-2">
+              {soloJoueurs.map((uid, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Select value={uid} onValueChange={(v) => setSoloAt(i, v)}>
+                    <SelectTrigger className="w-full"><SelectValue placeholder={`Joueur ${i + 1}`} /></SelectTrigger>
+                    <SelectContent className="z-50 bg-popover">
+                      {utilisateurs.map(u => (
+                        <SelectItem key={u.id} value={u.id}>{u.nom}</SelectItem>
+                      ))}
+                      <SelectItem value="__nouveau__">+ Nouveau</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="destructive" size="icon" onClick={() => supprimerSolo(i)} aria-label="Supprimer ce joueur"><X className="size-4" /></Button>
+                </div>
+              ))}
+              <Button variant="secondary" onClick={ajouterSlotSolo}>+ Ajouter un joueur</Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {equipes.map((e) => (
+                <div key={e.id} className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-medium">{e.nom}</div>
+                    <Button variant="destructive" size="icon" onClick={() => supprimerEquipe(e.id)} aria-label="Supprimer cette équipe"><X className="size-4" /></Button>
                   </div>
-                ))}
-              </div>
-            ))}
-          </div>
+                  <div className="space-y-2">
+                    {e.joueurs.map((jid, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Select value={jid} onValueChange={(v) => setJoueurEquipeAt(e.id, idx, v)}>
+                          <SelectTrigger className="w-full"><SelectValue placeholder={`Joueur ${idx + 1}`} /></SelectTrigger>
+                          <SelectContent className="z-50 bg-popover">
+                            {utilisateurs.map(u => (
+                              <SelectItem key={u.id} value={u.id}>{u.nom}</SelectItem>
+                            ))}
+                            <SelectItem value="__nouveau__">+ Nouveau</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="destructive" size="icon" onClick={() => supprimerJoueurDansEquipe(e.id, idx)} aria-label="Supprimer ce joueur"><X className="size-4" /></Button>
+                      </div>
+                    ))}
+                    <Button variant="secondary" onClick={() => ajouterJoueurDansEquipe(e.id)}>+ Ajouter un joueur</Button>
+                  </div>
+                </div>
+              ))}
+              <Button variant="outline" onClick={ajouterEquipe}>+ Ajouter une équipe</Button>
+            </div>
+          )}
+
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={inverser}>Inverser équipes</Button>
-            <Button variant="outline" onClick={()=>setEtape(1)}>Remplacer</Button>
-            <Button variant="default" onClick={()=>setEtape(3)} disabled={!canStart}>Suivant</Button>
+            <Button variant="outline" onClick={() => setEtape(1)}>Retour</Button>
+            <Button variant="default" onClick={() => setEtape(3)} disabled={!canStart}>Suivant</Button>
           </div>
         </div>
       )}
@@ -116,14 +194,14 @@ export default function CreationWizard() {
             <div className="flex items-center gap-2">
               <label>Points cible</label>
               <input type="number" min={7} max={13} className="border rounded px-3 py-2 w-24 bg-background" value={mode.ciblePoints ?? 13}
-              onChange={e=>setMode({...mode, ciblePoints: Number(e.target.value)})} />
+                onChange={e=>setMode({...mode, ciblePoints: Number(e.target.value)})} />
             </div>
           )}
           {mode.type==='chrono' && (
             <div className="flex items-center gap-2">
               <label>Durée (min)</label>
-              <input type="number" min={5} max={120} className="border rounded px-3 py-2 w-24 bg-background" value={mode.dureeLimiteMin ?? 45}
-              onChange={e=>setMode({...mode, dureeLimiteMin: Number(e.target.value)})} />
+              <input type="number" min={5} max={120} className="border rounded px-3 py-2 w-24 bg-background" value={(mode as any).dureeLimiteMin ?? 45}
+                onChange={e=>setMode({...mode, dureeLimiteMin: Number(e.target.value)})} />
               <select className="border rounded px-3 py-2 bg-background" value={mode.briseEgalite}
                 onChange={e=>setMode({...mode, briseEgalite: e.target.value as any})}>
                 <option value="mene_decisive">Mène décisive</option>
@@ -134,8 +212,8 @@ export default function CreationWizard() {
           {mode.type==='menes_fixes' && (
             <div className="flex items-center gap-2">
               <label>Nombre de mènes</label>
-              <input type="number" min={5} max={20} className="border rounded px-3 py-2 w-24 bg-background" value={mode.nombreDeMenes ?? 10}
-              onChange={e=>setMode({...mode, nombreDeMenes: Number(e.target.value)})} />
+              <input type="number" min={5} max={20} className="border rounded px-3 py-2 w-24 bg-background" value={(mode as any).nombreDeMenes ?? 10}
+                onChange={e=>setMode({...mode, nombreDeMenes: Number(e.target.value)})} />
               <select className="border rounded px-3 py-2 bg-background" value={mode.briseEgalite}
                 onChange={e=>setMode({...mode, briseEgalite: e.target.value as any})}>
                 <option value="mene_decisive">Mène décisive</option>
@@ -146,8 +224,12 @@ export default function CreationWizard() {
 
           <div className="rounded-lg border p-3 text-sm text-muted-foreground">
             <div className="font-medium text-foreground mb-1">Résumé</div>
-            <div>Format: {format}</div>
-            <div>Équipe A: {equipes[0].joueurs.length} joueur(s) – Équipe B: {equipes[1].joueurs.length} joueur(s)</div>
+            <div>Format: {format === 'chacun_pour_soi' ? 'Chacun pour soi' : 'Par équipes'}</div>
+            {format === 'chacun_pour_soi' ? (
+              <div>Joueurs: {soloJoueurs.filter(Boolean).length}</div>
+            ) : (
+              <div>Équipes: {equipes.filter(e=>e.joueurs.filter(Boolean).length>=1).length}</div>
+            )}
             <div>Mode: {mode.type}</div>
           </div>
 

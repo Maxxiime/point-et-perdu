@@ -16,9 +16,9 @@ interface DataContextType {
   renommerUtilisateur: (id: ID, nom: string) => void;
   supprimerUtilisateur: (id: ID) => void;
   // Parties
-  nouvellePartie: (payload: { formatEquipes: FormatEquipes; modeJeu: ModeJeu; equipes: [Equipe, Equipe]; }) => Partie;
-  ajouterMene: (partieId: ID, pointsA: number, pointsB: number) => void;
-  editerMene: (partieId: ID, numero: number, pointsA: number, pointsB: number) => void;
+  nouvellePartie: (payload: { formatEquipes: FormatEquipes; modeJeu: ModeJeu; equipes: Equipe[]; }) => Partie;
+  ajouterMene: (partieId: ID, points: Record<ID, number>) => void;
+  editerMene: (partieId: ID, numero: number, points: Record<ID, number>) => void;
   supprimerMene: (partieId: ID, numero: number) => void;
   rollbackVersMene: (partieId: ID, numero: number) => void;
   terminerPartie: (partieId: ID) => void;
@@ -53,56 +53,71 @@ function charger(): BaseDonnees | null {
 }
 
 function recalculerScoresEtEtat(partie: Partie): Partie {
-  // Recalcule les totaux
-  const scoreA = partie.menes.reduce((s, m) => s + (m.points.A || 0), 0);
-  const scoreB = partie.menes.reduce((s, m) => s + (m.points.B || 0), 0);
-  partie.equipes[0].scoreTotal = scoreA;
-  partie.equipes[1].scoreTotal = scoreB;
+  // Recalcule les totaux pour chaque équipe (N équipes supportées)
+  const scores = new Map<ID, number>();
+  for (const eq of partie.equipes) scores.set(eq.id, 0);
+  for (const m of partie.menes) {
+    for (const eq of partie.equipes) {
+      const pts = (m.points as Record<ID, number>)[eq.id] ?? 0;
+      scores.set(eq.id, (scores.get(eq.id) || 0) + (pts || 0));
+    }
+  }
+  partie.equipes = partie.equipes.map(eq => ({ ...eq, scoreTotal: scores.get(eq.id) || 0 }));
 
-  const { type, ciblePoints = 13, dureeLimiteMin, nombreDeMenes, briseEgalite } = partie.modeJeu;
+  const { type, ciblePoints = 13, nombreDeMenes, briseEgalite } = partie.modeJeu;
 
-  const termine = () => {
+  const leadersEtMax = () => {
+    let max = -Infinity;
+    let leaders: ID[] = [];
+    for (const eq of partie.equipes) {
+      const s = eq.scoreTotal;
+      if (s > max) { max = s; leaders = [eq.id]; }
+      else if (s === max) { leaders.push(eq.id); }
+    }
+    return { leaders, max };
+  };
+
+  const terminer = (vainqueurId: ID | null) => {
     partie.etat = "terminee";
-    partie.vainqueur = scoreA === scoreB ? null : scoreA > scoreB ? "A" : "B";
+    partie.vainqueur = vainqueurId;
     partie.enTieBreak = false;
   };
 
   if (type === "classique") {
-    if (scoreA >= (ciblePoints ?? 13) || scoreB >= (ciblePoints ?? 13)) {
-      termine();
-    }
+    const { leaders, max } = leadersEtMax();
+    const anyReached = partie.equipes.some(eq => eq.scoreTotal >= (ciblePoints ?? 13));
+    if (anyReached && leaders.length === 1 && max >= (ciblePoints ?? 13)) terminer(leaders[0]);
   } else if (type === "menes_fixes") {
     if (partie.menes.length >= (nombreDeMenes ?? 0)) {
-      if (scoreA !== scoreB) termine();
+      const { leaders } = leadersEtMax();
+      if (leaders.length === 1) terminer(leaders[0]);
       else {
-        if (briseEgalite === "egalite") {
-          partie.etat = "terminee";
-          partie.vainqueur = null;
-        } else {
-          // mène décisive: on attend une mène supplémentaire pour trancher
-          partie.enTieBreak = true;
-        }
+        if (briseEgalite === "egalite") terminer(null);
+        else partie.enTieBreak = true; // mène décisive
       }
     }
-    if (partie.enTieBreak && scoreA !== scoreB) termine();
+    if (partie.enTieBreak) {
+      const { leaders } = leadersEtMax();
+      if (leaders.length === 1) terminer(leaders[0]);
+    }
   } else if (type === "chrono") {
     if (partie.chronoExpireAt) {
       const now = Date.now();
       const expire = new Date(partie.chronoExpireAt).getTime();
       if (now >= expire) {
-        // Le chrono est dépassé: on termine à la fin de la mène courante
+        // Terminer à la fin de la mène courante
         if (partie.menes.length > 0) {
-          if (scoreA !== scoreB) termine();
-          else if (briseEgalite === "egalite") {
-            partie.etat = "terminee";
-            partie.vainqueur = null;
-          } else {
-            partie.enTieBreak = true;
-          }
+          const { leaders } = leadersEtMax();
+          if (leaders.length === 1) terminer(leaders[0]);
+          else if (briseEgalite === "egalite") terminer(null);
+          else partie.enTieBreak = true;
         }
       }
     }
-    if (partie.enTieBreak && scoreA !== scoreB) termine();
+    if (partie.enTieBreak) {
+      const { leaders } = leadersEtMax();
+      if (leaders.length === 1) terminer(leaders[0]);
+    }
   } else if (type === "amical") {
     // Fin manuelle uniquement
   }
@@ -200,16 +215,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sync(next);
   };
 
-  const ajouterMene = (partieId: ID, pointsA: number, pointsB: number) => {
+  const ajouterMene = (partieId: ID, points: Record<ID, number>) => {
     avecPartie(partieId, (p) => {
       if (p.etat !== "en_cours") return;
       const numero = p.menes.length + 1;
-      p.menes = [...p.menes, { numero, points: { A: pointsA, B: pointsB } }];
+      p.menes = [...p.menes, { numero, points }];
     });
   };
-  const editerMene = (partieId: ID, numero: number, pointsA: number, pointsB: number) => {
+  const editerMene = (partieId: ID, numero: number, points: Record<ID, number>) => {
     avecPartie(partieId, (p) => {
-      p.menes = p.menes.map(m => m.numero === numero ? { ...m, points: { A: pointsA, B: pointsB } } : m);
+      p.menes = p.menes.map(m => m.numero === numero ? { ...m, points } : m);
     });
   };
   const supprimerMene = (partieId: ID, numero: number) => {
@@ -261,7 +276,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     for (const u of db.utilisateurs) counts[u.id] = 0;
     for (const p of db.parties) {
       if (p.etat === "terminee" && p.vainqueur) {
-        const vainqueurs = p.equipes[p.vainqueur === "A" ? 0 : 1].joueurs;
+        const eq = p.equipes.find(e => e.id === p.vainqueur);
+        const vainqueurs = eq?.joueurs || [];
         for (const uid of vainqueurs) counts[uid] = (counts[uid] || 0) + 1;
       }
     }

@@ -2,7 +2,6 @@ import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
 import { useData } from "@/store/DataContext";
 import Scoreboard from "@/components/jouer/Scoreboard";
-import { formatFrLong } from "@/utils/date";
 
 export default function PartieDetail() {
   const { id } = useParams();
@@ -15,7 +14,6 @@ export default function PartieDetail() {
         <title>Détail partie – Pétanque facile</title>
         <meta name="description" content="Détails complets de la partie de pétanque." />
       </Helmet>
-      <div className="text-sm text-muted-foreground">{formatFrLong(partie.dateISO)}</div>
       <Scoreboard partie={partie} />
     </section>
   );

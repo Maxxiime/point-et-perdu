@@ -15,7 +15,7 @@ export default function Historique() {
     const list = db?.parties ?? [];
     let r = list;
     if (filtreEtat !== "Toutes") {
-      const map: any = { Terminées: "terminee", "En cours": "en_cours", Annulées: "annulee" };
+      const map: Record<string, string> = { Terminées: "terminee", "En cours": "en_cours", Annulées: "annulee" };
       r = r.filter(p => p.etat === map[filtreEtat]);
     }
     if (recherche.trim()) {
@@ -62,7 +62,9 @@ export default function Historique() {
                   <div className="font-semibold">{p.equipes[0].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")} {p.equipes[0].scoreTotal} – {p.equipes[1].scoreTotal} {p.equipes[1].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")}</div>
                   <div className="text-xs text-muted-foreground capitalize">{p.modeJeu.type.replace('_',' ')}</div>
                 </div>
-                <span className="text-xs px-2 py-1 rounded bg-secondary">{p.etat.replace('_',' ')}</span>
+                <span className="text-xs px-2 py-1 rounded bg-secondary">
+                  {{ en_cours: "En cours", terminee: "Terminée", annulee: "Annulée" }[p.etat]}
+                </span>
               </Link>
             </li>
           ))}

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter as AlertFooter, AlertDialogHeader as AlertHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function Scoreboard({ partie }: { partie: Partie }) {
-  const { db, ajouterMene, editerMene, supprimerMene, rollbackVersMene, terminerPartie, annulerPartie, likerPartie, commenterPartie, ajouterPhoto } = useData();
+  const { db, ajouterMene, editerMene, supprimerMene, terminerPartie, annulerPartie, likerPartie, commenterPartie, ajouterPhoto } = useData();
   const [newPoints, setNewPoints] = useState<Record<string, string>>(() => Object.fromEntries(partie.equipes.map(e => [e.id, ""])));
   const [editingMene, setEditingMene] = useState<number | null>(null);
   const [editPoints, setEditPoints] = useState<Record<string, number>>({});
@@ -31,7 +31,7 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
 
   const onEdit = (mNo: number) => {
     const m = partie.menes.find(m=>m.numero===mNo);
-    const base: Record<string, number> = Object.fromEntries(partie.equipes.map(e => [e.id, (m?.points as any)?.[e.id] ?? 0]));
+    const base: Record<string, number> = Object.fromEntries(partie.equipes.map(e => [e.id, m?.points?.[e.id] ?? 0]));
     setEditPoints(base);
     setEditingMene(mNo);
   };
@@ -39,12 +39,6 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   const onDelete = (mNo: number) => {
     if (!window.confirm(`Supprimer la mène n°${mNo} ?`)) return;
     supprimerMene(partie.id, mNo);
-  };
-
-  const onRollback = () => {
-    const n = Number(prompt("Revenir à la mène n° ?"));
-    if (!n) return;
-    rollbackVersMene(partie.id, n);
   };
 
   const onTerminer = () => {
@@ -124,7 +118,6 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Mènes</h3>
-          <Button variant="secondary" size="sm" onClick={onRollback}>Corriger une mène</Button>
         </div>
         {!partie.menes.length ? (
           <p className="text-muted-foreground">Aucune mène</p>
@@ -132,9 +125,9 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
           <ul className="space-y-1">
             {partie.menes.map(m => (
               <li key={m.numero} className="flex items-center justify-between border rounded p-2">
-                <span>
-                  n°{m.numero} — {partie.equipes.map(eq => `${(eq.joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")) || eq.nom} ${(m.points as any)[eq.id] ?? 0}`).join(" | ")}
-                </span>
+                  <span>
+                    n°{m.numero} — {partie.equipes.map(eq => `${(eq.joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")) || eq.nom} ${m.points[eq.id] ?? 0}`).join(" | ")}
+                  </span>
                 <div className="flex gap-1">
                   <Button size="sm" variant="outline" onClick={()=>onEdit(m.numero)}><Pencil className="size-4" /></Button>
                   <Button size="sm" variant="destructive" onClick={()=>onDelete(m.numero)}><Trash2 className="size-4" /></Button>

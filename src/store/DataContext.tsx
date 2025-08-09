@@ -64,6 +64,12 @@ function recalculerScoresEtEtat(partie: Partie): Partie {
   }
   partie.equipes = partie.equipes.map(eq => ({ ...eq, scoreTotal: scores.get(eq.id) || 0 }));
 
+  if (partie.etat === "annulee") {
+    partie.vainqueur = null;
+    partie.dateFinISO = null;
+    return partie;
+  }
+
   const target = partie.modeJeu.ciblePoints ?? 13;
 
   const leadersEtMax = () => {
@@ -82,6 +88,11 @@ function recalculerScoresEtEtat(partie: Partie): Partie {
   if (anyReached && leaders.length === 1 && max >= target) {
     partie.etat = "terminee";
     partie.vainqueur = leaders[0];
+    if (!partie.dateFinISO) partie.dateFinISO = nowISO();
+  } else {
+    partie.etat = "en_cours";
+    partie.vainqueur = null;
+    partie.dateFinISO = null;
   }
 
   return partie;
@@ -154,6 +165,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       equipes: payload.equipes,
       menes: [],
       vainqueur: null,
+      dateFinISO: null,
       likes: 0,
       commentaires: [],
       photos: [],

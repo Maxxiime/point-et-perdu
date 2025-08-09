@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useData } from "@/store/DataContext";
-import { Equipe, FormatEquipes, ModeJeu, Partie } from "@/types";
+import { Equipe, FormatEquipes, ModeJeu } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
 
@@ -23,6 +25,23 @@ export default function CreationWizard() {
 
   const utilisateurs = db?.utilisateurs || [];
 
+  const [newPlayerOpen, setNewPlayerOpen] = useState(false);
+  const [newPlayerName, setNewPlayerName] = useState("");
+  const newPlayerCb = useRef<((id: string) => void) | null>(null);
+
+  const demanderNouveauJoueur = (cb: (id: string) => void) => {
+    newPlayerCb.current = cb;
+    setNewPlayerName("");
+    setNewPlayerOpen(true);
+  };
+
+  const confirmerNouveauJoueur = () => {
+    if (!newPlayerName.trim()) return;
+    const u = creerUtilisateur(newPlayerName.trim());
+    newPlayerCb.current?.(u.id);
+    setNewPlayerOpen(false);
+  };
+
   const canStart = useMemo(() => {
     if (format === "chacun_pour_soi") return soloJoueurs.filter(Boolean).length >= 2;
     // par équipes: au moins 2 équipes avec >=1 joueur
@@ -34,12 +53,11 @@ export default function CreationWizard() {
   const supprimerSolo = (idx: number) => setSoloJoueurs(soloJoueurs.filter((_, i) => i !== idx));
   const setSoloAt = (idx: number, value: string) => {
     if (value === "__nouveau__") {
-      const nom = prompt("Nom du joueur ?");
-      if (!nom) return;
-      const u = creerUtilisateur(nom);
-      const next = [...soloJoueurs];
-      next[idx] = u.id;
-      setSoloJoueurs(next);
+      demanderNouveauJoueur((id) => {
+        const next = [...soloJoueurs];
+        next[idx] = id;
+        setSoloJoueurs(next);
+      });
     } else {
       const next = [...soloJoueurs];
       next[idx] = value;
@@ -60,15 +78,14 @@ export default function CreationWizard() {
   };
   const setJoueurEquipeAt = (eId: string, idx: number, value: string) => {
     if (value === "__nouveau__") {
-      const nom = prompt("Nom du joueur ?");
-      if (!nom) return;
-      const u = creerUtilisateur(nom);
-      setEquipes(equipes.map(e => {
-        if (e.id !== eId) return e;
-        const js = [...e.joueurs];
-        js[idx] = u.id;
-        return { ...e, joueurs: js };
-      }));
+      demanderNouveauJoueur((id) => {
+        setEquipes(equipes.map(e => {
+          if (e.id !== eId) return e;
+          const js = [...e.joueurs];
+          js[idx] = id;
+          return { ...e, joueurs: js };
+        }));
+      });
     } else {
       setEquipes(equipes.map(e => {
         if (e.id !== eId) return e;
@@ -238,6 +255,18 @@ export default function CreationWizard() {
           </div>
         </div>
       )}
+      <Dialog open={newPlayerOpen} onOpenChange={setNewPlayerOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouveau joueur</DialogTitle>
+          </DialogHeader>
+          <Input value={newPlayerName} onChange={e=>setNewPlayerName(e.target.value)} placeholder="Nom du joueur" />
+          <DialogFooter>
+            <Button variant="outline" onClick={()=>setNewPlayerOpen(false)}>Annuler</Button>
+            <Button onClick={confirmerNouveauJoueur}>Ajouter</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

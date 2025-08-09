@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function Scoreboard({ partie }: { partie: Partie }) {
   const { db, ajouterMene, editerMene, supprimerMene, rollbackVersMene, terminerPartie, annulerPartie, likerPartie, commenterPartie, ajouterPhoto } = useData();
-  const [newPoints, setNewPoints] = useState<Record<string, number>>(() => Object.fromEntries(partie.equipes.map(e => [e.id, 0])));
+  const [newPoints, setNewPoints] = useState<Record<string, string>>(() => Object.fromEntries(partie.equipes.map(e => [e.id, ""])));
   const [editingMene, setEditingMene] = useState<number | null>(null);
   const [editPoints, setEditPoints] = useState<Record<string, number>>({});
   const [comment, setComment] = useState("");
@@ -17,15 +17,16 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
 
   useEffect(() => {
     // Reset inputs when teams change or after validation
-    setNewPoints(Object.fromEntries(partie.equipes.map(e => [e.id, 0])));
+    setNewPoints(Object.fromEntries(partie.equipes.map(e => [e.id, ""])));
   }, [partie.equipes.length]);
 
   const expireAt = partie.chronoExpireAt ? new Date(partie.chronoExpireAt).getTime() : null;
   const countdown = useMemo(()=> expireAt ? formatCountdown(expireAt - Date.now()) : null, [expireAt, partie.menes.length]);
 
   const validerMene = () => {
-    ajouterMene(partie.id, newPoints);
-    setNewPoints(Object.fromEntries(partie.equipes.map(e => [e.id, 0])));
+    const pts = Object.fromEntries(Object.entries(newPoints).map(([id, val]) => [id, Number(val) || 0]));
+    ajouterMene(partie.id, pts);
+    setNewPoints(Object.fromEntries(partie.equipes.map(e => [e.id, ""])));
   };
 
   const onEdit = (mNo: number) => {
@@ -70,6 +71,14 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
     e.currentTarget.value = "";
   };
 
+  const nomVainqueur = useMemo(() => {
+    if (!partie.vainqueur) return null;
+    const eq = partie.equipes.find(e => e.id === partie.vainqueur);
+    if (!eq) return partie.vainqueur;
+    const noms = eq.joueurs.map(id => db?.utilisateurs.find(u => u.id === id)?.nom).filter(Boolean).join(" & ");
+    return noms || eq.nom;
+  }, [partie.vainqueur, partie.equipes, db?.utilisateurs]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -92,7 +101,7 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
             {partie.equipes.map((eq) => (
               <div key={eq.id}>
                 <label className="text-sm">{(eq.joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")) || eq.nom}</label>
-                <input type="number" min={0} value={newPoints[eq.id] ?? 0} onChange={e=>setNewPoints(p=>({ ...p, [eq.id]: Number(e.target.value) }))} className="mt-1 w-full border rounded px-3 py-2 bg-background" />
+                <input type="number" min={0} value={newPoints[eq.id] ?? ""} onChange={e=>setNewPoints(p=>({ ...p, [eq.id]: e.target.value }))} className="mt-1 w-full border rounded px-3 py-2 bg-background" />
               </div>
             ))}
           </div>
@@ -164,7 +173,7 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
       {partie.etat === 'terminee' && (
         <div className="rounded-lg border p-3 text-center bg-secondary">
           <div className="font-semibold">Partie terminée</div>
-          <div className="text-sm text-muted-foreground">Vainqueur: {partie.vainqueur ?? 'égalité'}</div>
+          <div className="text-sm text-muted-foreground">Vainqueur: {nomVainqueur ?? 'égalité'}</div>
         </div>
       )}
 

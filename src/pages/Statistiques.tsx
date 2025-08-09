@@ -7,14 +7,25 @@ export default function Statistiques() {
   const { db } = useData();
 
   const topVictoires = useMemo(() => {
-    const map = new Map<string, number>();
-    db?.parties.filter(p => p.etat === "terminee").forEach(p => {
-      if (!p.vainqueur) return;
-      const vainqueurs = p.equipes[p.vainqueur === "A" ? 0 : 1].joueurs;
-      vainqueurs.forEach(id => map.set(id, (map.get(id) || 0) + 1));
-    });
-    const data = (db?.utilisateurs || []).map(u => ({ name: u.nom, value: map.get(u.id) || 0 }));
-    return data.sort((a,b)=>b.value - a.value).slice(0,10);
+    const wins = new Map<string, number>();
+    const users = new Map((db?.utilisateurs || []).map(u => [u.id, u.nom]));
+    db?.parties
+      .filter(p => p.etat === "terminee" && p.vainqueur)
+      .forEach(p => {
+        const equipe = p.equipes[p.vainqueur === "A" ? 0 : 1].joueurs;
+        const key = equipe.slice().sort().join("-");
+        wins.set(key, (wins.get(key) || 0) + 1);
+      });
+    return Array.from(wins.entries())
+      .map(([ids, value]) => {
+        const name = ids
+          .split("-")
+          .map(id => users.get(id) || "Inconnu")
+          .join(" & ");
+        return { name, value };
+      })
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10);
   }, [db]);
 
   const moyennePointsParMene = useMemo(() => {
@@ -36,8 +47,11 @@ export default function Statistiques() {
       const t = totals.get(u.id) || { points: 0, menes: 0 };
       const avg = t.menes >= 5 ? +(t.points / t.menes).toFixed(2) : 0;
       return { name: u.nom, value: avg };
-    }).filter(d => d.value > 0).sort((a,b)=>b.value - a.value).slice(0,10);
-    return data;
+    });
+    return data
+      .filter(d => d.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10);
   }, [db]);
 
   return (
@@ -47,7 +61,7 @@ export default function Statistiques() {
         <meta name="description" content="Classements des victoires et moyennes de points par mène." />
       </Helmet>
       <div>
-        <h2 className="text-lg font-semibold mb-2">Top victoires</h2>
+        <h2 className="text-lg font-semibold mb-2">Top 10 victoires (équipes/joueurs)</h2>
         {!topVictoires.length ? (
           <p className="text-muted-foreground">Aucune statistique disponible (jouez une partie !)</p>
         ) : (
@@ -57,7 +71,7 @@ export default function Statistiques() {
                 <XAxis dataKey="name" hide />
                 <YAxis allowDecimals={false} width={20} />
                 <Tooltip />
-                <Bar dataKey="value" fill="hsl(var(--primary))" />
+                <Bar dataKey="value" fill="hsl(var(--chart-1))" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -65,7 +79,7 @@ export default function Statistiques() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-2">Top moyenne de points par mène</h2>
+        <h2 className="text-lg font-semibold mb-2">Top 10 moyenne de points par mène</h2>
         {!moyennePointsParMene.length ? (
           <p className="text-muted-foreground">Aucune statistique disponible (jouez une partie !)</p>
         ) : (
@@ -75,7 +89,7 @@ export default function Statistiques() {
                 <XAxis dataKey="name" hide />
                 <YAxis width={20} />
                 <Tooltip />
-                <Bar dataKey="value" fill="hsl(var(--accent))" />
+                <Bar dataKey="value" fill="hsl(var(--chart-2))" />
               </BarChart>
             </ResponsiveContainer>
           </div>

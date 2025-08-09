@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    allowedHosts: ["petanque2.maxime-lemenand.com"],
   },
   plugins: [
     react(),

@@ -16,14 +16,14 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   const countdown = useMemo(()=> expireAt ? formatCountdown(expireAt - Date.now()) : null, [expireAt, partie.menes.length]);
 
   const validerMene = () => {
-    ajouterMene(partie.id, a, b);
+    ajouterMene(partie.id, { [partie.equipes[0].id]: a, [partie.equipes[1].id]: b });
     setA(0); setB(0);
   };
 
   const onEdit = (mNo: number) => {
     const nvA = Number(prompt(`Points A (mène ${mNo})`, String(partie.menes.find(m=>m.numero===mNo)?.points.A ?? 0)));
     const nvB = Number(prompt(`Points B (mène ${mNo})`, String(partie.menes.find(m=>m.numero===mNo)?.points.B ?? 0)));
-    editerMene(partie.id, mNo, nvA, nvB);
+    editerMene(partie.id, mNo, { [partie.equipes[0].id]: nvA, [partie.equipes[1].id]: nvB });
   };
 
   const onDelete = (mNo: number) => {

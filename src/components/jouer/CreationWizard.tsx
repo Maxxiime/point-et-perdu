@@ -21,7 +21,7 @@ export default function CreationWizard() {
     { id: "E2", nom: "Équipe 2", joueurs: [], scoreTotal: 0 },
   ]);
 
-  const [mode, setMode] = useState<ModeJeu>({ type: "classique", ciblePoints: 13, briseEgalite: "mene_decisive" });
+  const [mode, setMode] = useState<ModeJeu>({ type: "classique", ciblePoints: 13 });
 
   const utilisateurs = db?.utilisateurs || [];
 
@@ -200,41 +200,15 @@ export default function CreationWizard() {
         <div className="space-y-4">
           <h2 className="font-semibold">3) Mode de jeu</h2>
           <div className="grid grid-cols-2 gap-3">
-            <Button variant={mode.type==='classique'?"default":"outline"} onClick={()=>setMode({ type:'classique', ciblePoints:13, briseEgalite:'mene_decisive' })}>Classique</Button>
-            <Button variant={mode.type==='chrono'?"default":"outline"} onClick={()=>setMode({ type:'chrono', dureeLimiteMin:45, briseEgalite:'mene_decisive' })}>Chronométré</Button>
-            <Button variant={mode.type==='menes_fixes'?"default":"outline"} onClick={()=>setMode({ type:'menes_fixes', nombreDeMenes:10, briseEgalite:'mene_decisive' })}>Mènes fixes</Button>
-            <Button variant={mode.type==='amical'?"default":"outline"} onClick={()=>setMode({ type:'amical' })}>Amical</Button>
+            <Button variant={mode.type==='classique'?"default":"outline"} onClick={()=>setMode({ type:'classique', ciblePoints:13 })}>Classique</Button>
+            <Button variant={mode.type==='custom'?"default":"outline"} onClick={()=>setMode({ type:'custom', ciblePoints:13 })}>Custom</Button>
           </div>
 
-          {mode.type==='classique' && (
+          {mode.type==='custom' && (
             <div className="flex items-center gap-2">
               <label>Points cible</label>
-              <input type="number" min={7} max={13} className="border rounded px-3 py-2 w-24 bg-background" value={mode.ciblePoints ?? 13}
+              <input type="number" min={1} className="border rounded px-3 py-2 w-24 bg-background" value={mode.ciblePoints}
                 onChange={e=>setMode({...mode, ciblePoints: Number(e.target.value)})} />
-            </div>
-          )}
-          {mode.type==='chrono' && (
-            <div className="flex items-center gap-2">
-              <label>Durée (min)</label>
-              <input type="number" min={5} max={120} className="border rounded px-3 py-2 w-24 bg-background" value={(mode as any).dureeLimiteMin ?? 45}
-                onChange={e=>setMode({...mode, dureeLimiteMin: Number(e.target.value)})} />
-              <select className="border rounded px-3 py-2 bg-background" value={mode.briseEgalite}
-                onChange={e=>setMode({...mode, briseEgalite: e.target.value as any})}>
-                <option value="mene_decisive">Mène décisive</option>
-                <option value="egalite">Égalité acceptée</option>
-              </select>
-            </div>
-          )}
-          {mode.type==='menes_fixes' && (
-            <div className="flex items-center gap-2">
-              <label>Nombre de mènes</label>
-              <input type="number" min={5} max={20} className="border rounded px-3 py-2 w-24 bg-background" value={(mode as any).nombreDeMenes ?? 10}
-                onChange={e=>setMode({...mode, nombreDeMenes: Number(e.target.value)})} />
-              <select className="border rounded px-3 py-2 bg-background" value={mode.briseEgalite}
-                onChange={e=>setMode({...mode, briseEgalite: e.target.value as any})}>
-                <option value="mene_decisive">Mène décisive</option>
-                <option value="egalite">Égalité acceptée</option>
-              </select>
             </div>
           )}
 
@@ -246,7 +220,7 @@ export default function CreationWizard() {
             ) : (
               <div>Équipes: {equipes.filter(e=>e.joueurs.filter(Boolean).length>=1).length}</div>
             )}
-            <div>Mode: {mode.type}</div>
+            <div>Mode: {mode.type} — {mode.ciblePoints} points</div>
           </div>
 
           <div className="flex gap-2">

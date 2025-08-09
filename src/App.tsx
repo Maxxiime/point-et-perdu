@@ -11,6 +11,7 @@ import Statistiques from "./pages/Statistiques";
 import Admin from "./pages/Admin";
 import PartieDetail from "./pages/PartieDetail";
 import NotFound from "./pages/NotFound";
+import Regles from "./pages/Regles";
 import { DataProvider } from "@/store/DataContext";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/historique" element={<Historique />} />
                 <Route path="/stats" element={<Statistiques />} />
+                <Route path="/regles" element={<Regles />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/partie/:id" element={<PartieDetail />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

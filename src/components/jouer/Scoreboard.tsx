@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useData } from "@/store/DataContext";
 import { Partie } from "@/types";
-import { formatCountdown, formatFrLong } from "@/utils/date";
+import { formatFrLong } from "@/utils/date";
 import { Pencil, Trash2, ImagePlus, Heart, MessageSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter as AlertFooter, AlertDialogHeader as AlertHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -20,8 +20,6 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
     setNewPoints(Object.fromEntries(partie.equipes.map(e => [e.id, ""])));
   }, [partie.equipes.length]);
 
-  const expireAt = partie.chronoExpireAt ? new Date(partie.chronoExpireAt).getTime() : null;
-  const countdown = useMemo(()=> expireAt ? formatCountdown(expireAt - Date.now()) : null, [expireAt, partie.menes.length]);
 
   const validerMene = () => {
     const pts = Object.fromEntries(Object.entries(newPoints).map(([id, val]) => [id, Number(val) || 0]));
@@ -77,7 +75,6 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">{formatFrLong(partie.dateISO)}</div>
-        {countdown && <div className="text-sm font-mono">⏱ {countdown}</div>}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">

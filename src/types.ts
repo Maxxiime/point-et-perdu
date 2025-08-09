@@ -3,8 +3,7 @@ export type ID = string;
 
 export type EtatPartie = "en_cours" | "terminee" | "annulee";
 export type FormatEquipes = "chacun_pour_soi" | "par_equipes";
-export type TypeModeJeu = "classique" | "chrono" | "menes_fixes" | "amical";
-export type BriseEgalite = "mene_decisive" | "egalite";
+export type TypeModeJeu = "classique" | "custom";
 
 export interface Utilisateur {
   id: ID;
@@ -38,10 +37,7 @@ export interface Photo {
 
 export interface ModeJeu {
   type: TypeModeJeu;
-  ciblePoints?: number | null; // classique
-  dureeLimiteMin?: number | null; // chrono
-  nombreDeMenes?: number | null; // menes_fixes
-  briseEgalite?: BriseEgalite;
+  ciblePoints: number;
 }
 
 export interface Partie {
@@ -56,9 +52,6 @@ export interface Partie {
   likes: number;
   commentaires: Commentaire[];
   photos: Photo[];
-  // Champs runtime (non exportés si besoin)
-  chronoExpireAt?: string | null; // ISO si chrono
-  enTieBreak?: boolean; // pour mène décisive
 }
 
 export interface BaseDonnees {

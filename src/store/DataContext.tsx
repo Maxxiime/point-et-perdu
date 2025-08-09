@@ -64,7 +64,7 @@ function recalculerScoresEtEtat(partie: Partie): Partie {
   }
   partie.equipes = partie.equipes.map(eq => ({ ...eq, scoreTotal: scores.get(eq.id) || 0 }));
 
-  const { type, ciblePoints = 13, nombreDeMenes, briseEgalite } = partie.modeJeu;
+  const target = partie.modeJeu.ciblePoints ?? 13;
 
   const leadersEtMax = () => {
     let max = -Infinity;
@@ -77,49 +77,11 @@ function recalculerScoresEtEtat(partie: Partie): Partie {
     return { leaders, max };
   };
 
-  const terminer = (vainqueurId: ID | null) => {
+  const { leaders, max } = leadersEtMax();
+  const anyReached = partie.equipes.some(eq => eq.scoreTotal >= target);
+  if (anyReached && leaders.length === 1 && max >= target) {
     partie.etat = "terminee";
-    partie.vainqueur = vainqueurId;
-    partie.enTieBreak = false;
-  };
-
-  if (type === "classique") {
-    const { leaders, max } = leadersEtMax();
-    const anyReached = partie.equipes.some(eq => eq.scoreTotal >= (ciblePoints ?? 13));
-    if (anyReached && leaders.length === 1 && max >= (ciblePoints ?? 13)) terminer(leaders[0]);
-  } else if (type === "menes_fixes") {
-    if (partie.menes.length >= (nombreDeMenes ?? 0)) {
-      const { leaders } = leadersEtMax();
-      if (leaders.length === 1) terminer(leaders[0]);
-      else {
-        if (briseEgalite === "egalite") terminer(null);
-        else partie.enTieBreak = true; // mène décisive
-      }
-    }
-    if (partie.enTieBreak) {
-      const { leaders } = leadersEtMax();
-      if (leaders.length === 1) terminer(leaders[0]);
-    }
-  } else if (type === "chrono") {
-    if (partie.chronoExpireAt) {
-      const now = Date.now();
-      const expire = new Date(partie.chronoExpireAt).getTime();
-      if (now >= expire) {
-        // Terminer à la fin de la mène courante
-        if (partie.menes.length > 0) {
-          const { leaders } = leadersEtMax();
-          if (leaders.length === 1) terminer(leaders[0]);
-          else if (briseEgalite === "egalite") terminer(null);
-          else partie.enTieBreak = true;
-        }
-      }
-    }
-    if (partie.enTieBreak) {
-      const { leaders } = leadersEtMax();
-      if (leaders.length === 1) terminer(leaders[0]);
-    }
-  } else if (type === "amical") {
-    // Fin manuelle uniquement
+    partie.vainqueur = leaders[0];
   }
 
   return partie;
@@ -195,9 +157,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       likes: 0,
       commentaires: [],
       photos: [],
-      chronoExpireAt: payload.modeJeu.type === "chrono" && payload.modeJeu.dureeLimiteMin ?
-        new Date(Date.now() + payload.modeJeu.dureeLimiteMin * 60000).toISOString() : null,
-      enTieBreak: false,
     };
     const next = { ...db, parties: [partie, ...db.parties] };
     sync(next);

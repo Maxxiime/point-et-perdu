@@ -1,29 +1,38 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useData } from "@/store/DataContext";
 import { Partie } from "@/types";
 import { formatCountdown, formatFrLong } from "@/utils/date";
 import { Pencil, Trash2, ImagePlus, Heart, MessageSquare } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter as AlertFooter, AlertDialogHeader as AlertHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function Scoreboard({ partie }: { partie: Partie }) {
   const { db, ajouterMene, editerMene, supprimerMene, rollbackVersMene, terminerPartie, annulerPartie, likerPartie, commenterPartie, ajouterPhoto } = useData();
-  const [a, setA] = useState(0);
-  const [b, setB] = useState(0);
+  const [newPoints, setNewPoints] = useState<Record<string, number>>(() => Object.fromEntries(partie.equipes.map(e => [e.id, 0])));
+  const [editingMene, setEditingMene] = useState<number | null>(null);
+  const [editPoints, setEditPoints] = useState<Record<string, number>>({});
   const [comment, setComment] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Reset inputs when teams change or after validation
+    setNewPoints(Object.fromEntries(partie.equipes.map(e => [e.id, 0])));
+  }, [partie.equipes.length]);
 
   const expireAt = partie.chronoExpireAt ? new Date(partie.chronoExpireAt).getTime() : null;
   const countdown = useMemo(()=> expireAt ? formatCountdown(expireAt - Date.now()) : null, [expireAt, partie.menes.length]);
 
   const validerMene = () => {
-    ajouterMene(partie.id, { [partie.equipes[0].id]: a, [partie.equipes[1].id]: b });
-    setA(0); setB(0);
+    ajouterMene(partie.id, newPoints);
+    setNewPoints(Object.fromEntries(partie.equipes.map(e => [e.id, 0])));
   };
 
   const onEdit = (mNo: number) => {
-    const nvA = Number(prompt(`Points A (mène ${mNo})`, String(partie.menes.find(m=>m.numero===mNo)?.points.A ?? 0)));
-    const nvB = Number(prompt(`Points B (mène ${mNo})`, String(partie.menes.find(m=>m.numero===mNo)?.points.B ?? 0)));
-    editerMene(partie.id, mNo, { [partie.equipes[0].id]: nvA, [partie.equipes[1].id]: nvB });
+    const m = partie.menes.find(m=>m.numero===mNo);
+    const base: Record<string, number> = Object.fromEntries(partie.equipes.map(e => [e.id, (m?.points as any)?.[e.id] ?? 0]));
+    setEditPoints(base);
+    setEditingMene(mNo);
   };
 
   const onDelete = (mNo: number) => {
@@ -68,37 +77,26 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
         {countdown && <div className="text-sm font-mono">⏱ {countdown}</div>}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 text-center">
-        <div className="rounded-xl p-4 bg-gradient-to-b from-[hsl(var(--card))] to-[hsl(var(--secondary))] border">
-          <div className="text-xs uppercase text-muted-foreground mb-1">{(partie.equipes[0].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")) || partie.equipes[0].nom}</div>
-          <div className="text-5xl font-bold">{partie.equipes[0].scoreTotal}</div>
-        </div>
-        <div className="rounded-xl p-4 bg-gradient-to-b from-[hsl(var(--card))] to-[hsl(var(--secondary))] border">
-          <div className="text-xs uppercase text-muted-foreground mb-1">{(partie.equipes[1].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")) || partie.equipes[1].nom}</div>
-          <div className="text-5xl font-bold">{partie.equipes[1].scoreTotal}</div>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
+        {partie.equipes.map((eq) => (
+          <div key={eq.id} className="rounded-xl p-4 bg-gradient-to-b from-[hsl(var(--card))] to-[hsl(var(--secondary))] border">
+            <div className="text-xs uppercase text-muted-foreground mb-1">{(eq.joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")) || eq.nom}</div>
+            <div className="text-5xl font-bold">{eq.scoreTotal}</div>
+          </div>
+        ))}
       </div>
 
       {partie.etat === 'en_cours' && (
         <div className="border rounded-xl p-3 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-sm">Points A (0–6)</label>
-              <input type="number" min={0} max={6} value={a} onChange={e=>setA(Number(e.target.value))} className="mt-1 w-full border rounded px-3 py-2 bg-background" />
-            </div>
-            <div>
-              <label className="text-sm">Points B (0–6)</label>
-              <input type="number" min={0} max={6} value={b} onChange={e=>setB(Number(e.target.value))} className="mt-1 w-full border rounded px-3 py-2 bg-background" />
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {partie.equipes.map((eq) => (
+              <div key={eq.id}>
+                <label className="text-sm">{(eq.joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")) || eq.nom}</label>
+                <input type="number" min={0} value={newPoints[eq.id] ?? 0} onChange={e=>setNewPoints(p=>({ ...p, [eq.id]: Number(e.target.value) }))} className="mt-1 w-full border rounded px-3 py-2 bg-background" />
+              </div>
+            ))}
           </div>
           <Button className="w-full" onClick={validerMene}>Valider la mène</Button>
-          <div className="flex gap-2">
-            <Button variant="secondary" className="flex-1" onClick={onRollback}>Corriger une mène</Button>
-            {partie.modeJeu.type === 'amical' && (
-              <Button variant="outline" className="flex-1" onClick={onTerminer}>Terminer la partie</Button>
-            )}
-            <Button variant="outline" className="flex-1" onClick={onAnnuler}>Annuler la partie</Button>
-          </div>
         </div>
       )}
 
@@ -115,14 +113,19 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
       </div>
 
       <div className="space-y-2">
-        <h3 className="font-semibold">Mènes</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold">Mènes</h3>
+          <Button variant="secondary" size="sm" onClick={onRollback}>Corriger une mène</Button>
+        </div>
         {!partie.menes.length ? (
           <p className="text-muted-foreground">Aucune mène</p>
         ) : (
           <ul className="space-y-1">
             {partie.menes.map(m => (
               <li key={m.numero} className="flex items-center justify-between border rounded p-2">
-                <span>n°{m.numero} — A {m.points.A} / B {m.points.B}</span>
+                <span>
+                  n°{m.numero} — {partie.equipes.map(eq => `${(eq.joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")) || eq.nom} ${(m.points as any)[eq.id] ?? 0}`).join(" | ")}
+                </span>
                 <div className="flex gap-1">
                   <Button size="sm" variant="outline" onClick={()=>onEdit(m.numero)}><Pencil className="size-4" /></Button>
                   <Button size="sm" variant="destructive" onClick={()=>onDelete(m.numero)}><Trash2 className="size-4" /></Button>
@@ -164,6 +167,72 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
           <div className="text-sm text-muted-foreground">Vainqueur: {partie.vainqueur ?? 'égalité'}</div>
         </div>
       )}
+
+      <Dialog open={editingMene !== null} onOpenChange={(o)=>{ if(!o) setEditingMene(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier la mène n°{editingMene ?? ""}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {partie.equipes.map(eq => (
+              <div key={eq.id}>
+                <label className="text-sm">{(eq.joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")) || eq.nom}</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={editPoints[eq.id] ?? 0}
+                  onChange={e => setEditPoints(p=>({ ...p, [eq.id]: Number(e.target.value) }))}
+                  className="mt-1 w-full border rounded px-3 py-2 bg-background"
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Annuler</Button>
+            </DialogClose>
+            <Button onClick={() => { if (editingMene!=null) { editerMene(partie.id, editingMene, editPoints); setEditingMene(null); } }}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {partie.etat === 'en_cours' && (
+        <div className="sticky bottom-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3">
+          <div className="flex gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button className="flex-1" variant="destructive">Terminer la partie</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertHeader>
+                  <AlertDialogTitle>Terminer la partie ?</AlertDialogTitle>
+                  <AlertDialogDescription>Cette action va clôturer la partie en cours.</AlertDialogDescription>
+                </AlertHeader>
+                <AlertFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={onTerminer}>Oui, terminer</AlertDialogAction>
+                </AlertFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button className="flex-1" variant="destructive">Annuler la partie</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertHeader>
+                  <AlertDialogTitle>Annuler la partie ?</AlertDialogTitle>
+                  <AlertDialogDescription>Cette action est définitive et supprimera la partie en cours.</AlertDialogDescription>
+                </AlertHeader>
+                <AlertFooter>
+                  <AlertDialogCancel>Retour</AlertDialogCancel>
+                  <AlertDialogAction onClick={onAnnuler}>Oui, annuler</AlertDialogAction>
+                </AlertFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

@@ -99,8 +99,7 @@ export default function CreationWizard() {
         }))
         .filter(e => e.joueurs.length >= 1);
     }
-    const p = nouvellePartie({ formatEquipes: format, modeJeu: mode, equipes: payloadEquipes });
-    alert("Partie démarrée !");
+    nouvellePartie({ formatEquipes: format, modeJeu: mode, equipes: payloadEquipes });
   };
 
   return (

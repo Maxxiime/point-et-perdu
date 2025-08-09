@@ -49,6 +49,7 @@ export interface Partie {
   equipes: Equipe[];
   menes: Mene[];
   vainqueur: ID | null;
+  dateFinISO: string | null;
   likes: number;
   commentaires: Commentaire[];
   photos: Photo[];

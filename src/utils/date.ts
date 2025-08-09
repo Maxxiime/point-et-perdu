@@ -3,7 +3,8 @@ import { fr } from "date-fns/locale";
 
 export function formatFrLong(iso: string) {
   const d = new Date(iso);
-  return format(d, "eee d MMMM yyyy, HH:mm", { locale: fr });
+  const formatted = format(d, "eeee d MMMM yyyy 'à' HH'h'mm", { locale: fr });
+  return formatted.replace(/(^|\s)\p{L}/gu, (m) => m.toUpperCase()).replace("À", "à");
 }
 
 export function formatCountdown(msLeft: number) {

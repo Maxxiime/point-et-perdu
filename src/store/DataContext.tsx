@@ -45,9 +45,24 @@ function nowISO() {
 
 function sauver(db: BaseDonnees) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  fetch("/api/data", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(db),
+  }).catch(() => {});
 }
 
-function charger(): BaseDonnees | null {
+async function chargerServeur(): Promise<BaseDonnees | null> {
+  try {
+    const res = await fetch("/api/data", { cache: "no-store" });
+    if (res.ok) return (await res.json()) as BaseDonnees;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function chargerLocal(): BaseDonnees | null {
   const raw = localStorage.getItem(STORAGE_KEY);
   return raw ? (JSON.parse(raw) as BaseDonnees) : null;
 }
@@ -103,17 +118,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [estAdmin, setEstAdmin] = useState<boolean>(sessionStorage.getItem(SESSION_ADMIN_KEY) === "1");
 
   useEffect(() => {
-    const local = charger();
-    if (local) setDb(local);
-    else {
-      // Charger depuis le JSON public
-      (async () => {
-        const res = await fetch("/data/data.json", { cache: "no-store" });
-        const data = (await res.json()) as BaseDonnees;
-        setDb(data);
-        sauver(data);
-      })();
-    }
+    (async () => {
+      const distant = await chargerServeur();
+      if (distant) {
+        setDb(distant);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(distant));
+      } else {
+        const local = chargerLocal();
+        if (local) setDb(local);
+      }
+    })();
   }, []);
 
   const loginAdmin = (pwd: string) => {

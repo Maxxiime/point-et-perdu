@@ -10,6 +10,7 @@ export default function Historique() {
   const { db } = useData();
   const [filtreEtat, setFiltreEtat] = useState<string>("Toutes");
   const [recherche, setRecherche] = useState("");
+  const [rechercheDate, setRechercheDate] = useState("");
 
   const parties = useMemo(() => {
     const list = db?.parties ?? [];
@@ -28,8 +29,11 @@ export default function Historique() {
         return noms.includes(q);
       });
     }
+    if (rechercheDate) {
+      r = r.filter(p => p.dateISO.startsWith(rechercheDate));
+    }
     return [...r].sort((a,b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime());
-  }, [db, filtreEtat, recherche]);
+  }, [db, filtreEtat, recherche, rechercheDate]);
 
   return (
     <section className="space-y-4">
@@ -48,6 +52,7 @@ export default function Historique() {
           </SelectContent>
         </Select>
         <Input placeholder="Recherche par joueur" value={recherche} onChange={e=>setRecherche(e.target.value)} />
+        <Input type="date" value={rechercheDate} onChange={e=>setRechercheDate(e.target.value)} />
       </div>
 
       {!parties.length ? (

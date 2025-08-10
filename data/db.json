@@ -1,0 +1,9 @@
+{
+  "utilisateurs": [
+    { "id": "u1", "nom": "Alice", "victoires": 0 },
+    { "id": "u2", "nom": "Bruno", "victoires": 0 },
+    { "id": "u3", "nom": "Chloé", "victoires": 0 },
+    { "id": "u4", "nom": "David", "victoires": 0 }
+  ],
+  "parties": []
+}

@@ -8,6 +8,12 @@ export default defineConfig(() => ({
     host: "::",
     port: 8080,
     allowedHosts: ["petanque2.maxime-lemenand.com"],
+    proxy: {
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [react()],
   resolve: {

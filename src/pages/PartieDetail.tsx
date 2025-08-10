@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
 import { useData } from "@/store/DataContext";
 import Scoreboard from "@/components/jouer/Scoreboard";
+import PhotoAnalyzer from "@/components/PhotoAnalyzer";
 
 export default function PartieDetail() {
   const { id } = useParams();
@@ -16,5 +17,6 @@ export default function PartieDetail() {
       </Helmet>
       <Scoreboard partie={partie} />
     </section>
+    <PhotoAnalyzer />
   );
 }

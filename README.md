@@ -1,6 +1,6 @@
-# Boulodrome
+# Pétanque facile
 
-Boulodrome is a pétanque management application built with Vite, React, TypeScript, shadcn-ui and Tailwind CSS.
+Pétanque facile is an application for managing pétanque games built with Vite, React, TypeScript, shadcn-ui and Tailwind CSS.
 
 ## Development
 

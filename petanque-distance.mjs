@@ -92,6 +92,7 @@ function classifyJackAndBalls(src, circles, jackColor) {
     if (jackColor === 'orange' && h >= 5 && h <= 25) score += 2;
     if (!best || score > best.score) {
       if (best) others.push(best);
+      // spread circle properties to avoid invalid object syntax
       best = { ...c, score };
     } else {
       others.push({ ...c, score });

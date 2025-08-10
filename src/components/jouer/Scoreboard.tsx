@@ -5,6 +5,7 @@ import { Partie } from "@/types";
 import { formatFrLong } from "@/utils/date";
 import { Pencil, Trash2, ImagePlus, Heart, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import imageCompression from "browser-image-compression";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter as AlertFooter, AlertDialogHeader as AlertHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -62,12 +63,22 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      ajouterPhoto(partie.id, String(reader.result));
-    };
-    reader.readAsDataURL(f);
-    e.currentTarget.value = "";
+    try {
+      const compressed = await imageCompression(f, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1024,
+        useWebWorker: true,
+      });
+      const reader = new FileReader();
+      reader.onload = () => {
+        ajouterPhoto(partie.id, String(reader.result));
+      };
+      reader.readAsDataURL(compressed);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      e.currentTarget.value = "";
+    }
   };
 
   const nomVainqueur = useMemo(() => {

@@ -4,6 +4,12 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import { saveBase64AsJpeg } from './utils/image-store.mjs';
+import express from "express";
+import { router as analyzerRouter } from "./server/opencv-analyze.mjs";
+
+const app = express();
+app.use(analyzerRouter);
+app.listen(process.env.PORT || 8787);
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'db.json');

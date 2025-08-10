@@ -17,8 +17,12 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   const [comment, setComment] = useState("");
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
   const [likeAnim, setLikeAnim] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(partie.likes > 0);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setLiked(partie.likes > 0);
+  }, [partie.likes]);
 
   useEffect(() => {
     // Reset inputs when teams change or after validation

@@ -13,6 +13,7 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   const [editingMene, setEditingMene] = useState<number | null>(null);
   const [editPoints, setEditPoints] = useState<Record<string, number>>({});
   const [comment, setComment] = useState("");
+  const [viewPhoto, setViewPhoto] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -140,11 +141,35 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
           <h3 className="font-semibold">Photos</h3>
           <div className="grid grid-cols-3 gap-2">
             {partie.photos.map(ph => (
-              <img key={ph.id} src={ph.url} alt="Photo de la partie de pétanque" className="w-full h-24 object-cover rounded" loading="lazy" />
+              <button
+                key={ph.id}
+                type="button"
+                onClick={() => setViewPhoto(ph.url)}
+                className="w-full h-24 rounded overflow-hidden p-0 border-0 bg-transparent"
+              >
+                <img
+                  src={ph.url}
+                  alt="Photo de la partie de pétanque"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </button>
             ))}
           </div>
         </div>
       )}
+
+      <Dialog open={viewPhoto !== null} onOpenChange={o => { if (!o) setViewPhoto(null); }}>
+        <DialogContent className="max-w-fit p-0">
+          {viewPhoto && (
+            <img
+              src={viewPhoto}
+              alt="Photo de la partie de pétanque"
+              className="max-w-[90vw] max-h-[90vh]"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {!!partie.commentaires.length && (
         <div className="space-y-2">

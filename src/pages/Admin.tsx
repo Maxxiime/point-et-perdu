@@ -2,6 +2,17 @@ import { Helmet } from "react-helmet-async";
 import { useData } from "@/store/DataContext";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Admin() {
   const { estAdmin, loginAdmin, logoutAdmin, db, supprimerPartie, supprimerUtilisateur, renommerUtilisateur, reinitialiserStats, exporterJSON, importerJSON } = useData();
@@ -73,9 +84,25 @@ export default function Admin() {
           {db?.parties.map(p => (
             <li key={p.id} className="flex items-center justify-between border rounded p-2">
               <span>{p.equipes[0].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")} vs {p.equipes[1].joueurs.map(id=>db?.utilisateurs.find(u=>u.id===id)?.nom).filter(Boolean).join(" & ")} – {p.etat}</span>
-              <Button variant="destructive" onClick={()=>{
-                if (window.confirm("Supprimer définitivement cette partie ? Cette action est irréversible.")) supprimerPartie(p.id);
-              }}>Supprimer</Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">Supprimer</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Supprimer la partie ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cette action est irréversible.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => supprimerPartie(p.id)}>
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </li>
           ))}
         </ul>
@@ -87,9 +114,27 @@ export default function Admin() {
           {db?.utilisateurs.map(u => (
             <li key={u.id} className="flex items-center justify-between border rounded p-2">
               <span>{u.nom}</span>
-              <Button variant="destructive" onClick={()=>{
-                if (window.confirm(`Supprimer l’utilisateur « ${u.nom} » ? Il disparaîtra des listes. Les parties passées resteront inchangées.`)) supprimerUtilisateur(u.id);
-              }}>Supprimer</Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">Supprimer</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Supprimer l’utilisateur « {u.nom} » ?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Il disparaîtra des listes. Les parties passées resteront inchangées.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => supprimerUtilisateur(u.id)}>
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </li>
           ))}
         </ul>

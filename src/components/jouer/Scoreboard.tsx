@@ -17,6 +17,7 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   const [comment, setComment] = useState("");
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
   const [likeAnim, setLikeAnim] = useState(false);
+  const [liked, setLiked] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   };
   const onLike = () => {
     likerPartie(partie.id);
+    setLiked(true);
     setLikeAnim(true);
     setTimeout(() => setLikeAnim(false), 500);
   };
@@ -123,7 +125,13 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
           <Button variant="outline" onClick={onPhoto} className="flex items-center gap-2"><ImagePlus className="size-4" /> + Photo</Button>
           <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
           <Button variant="outline" onClick={onLike} className="flex items-center gap-2">
-            <Heart className={cn("size-4 transition-all", likeAnim && "text-red-500 animate-bounce")} />
+            <Heart
+              className={cn(
+                "size-4 transition-all",
+                liked && "fill-red-500 text-red-500",
+                likeAnim && "animate-bounce"
+              )}
+            />
             Like ({partie.likes})
           </Button>
         </div>

@@ -4,6 +4,7 @@ import { useData } from "@/store/DataContext";
 import { Partie } from "@/types";
 import { formatFrLong } from "@/utils/date";
 import { Pencil, Trash2, ImagePlus, Heart, MessageSquare } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter as AlertFooter, AlertDialogHeader as AlertHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -14,6 +15,7 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   const [editPoints, setEditPoints] = useState<Record<string, number>>({});
   const [comment, setComment] = useState("");
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
+  const [likeAnim, setLikeAnim] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -46,7 +48,11 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   const onAnnuler = () => {
     annulerPartie(partie.id);
   };
-  const onLike = () => likerPartie(partie.id);
+  const onLike = () => {
+    likerPartie(partie.id);
+    setLikeAnim(true);
+    setTimeout(() => setLikeAnim(false), 500);
+  };
   const onComment = () => {
     if (!comment.trim()) return;
     commenterPartie(partie.id, comment);
@@ -105,7 +111,10 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={onPhoto} className="flex items-center gap-2"><ImagePlus className="size-4" /> + Photo</Button>
           <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
-          <Button variant="outline" onClick={onLike} className="flex items-center gap-2"><Heart className="size-4" /> Like ({partie.likes})</Button>
+          <Button variant="outline" onClick={onLike} className="flex items-center gap-2">
+            <Heart className={cn("size-4 transition-all", likeAnim && "text-red-500 animate-bounce")} />
+            Like ({partie.likes})
+          </Button>
         </div>
         <div className="flex items-center gap-2">
           <input className="flex-1 border rounded px-3 py-2 bg-background" placeholder="Commenter" value={comment} onChange={e=>setComment(e.target.value)} />

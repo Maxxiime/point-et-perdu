@@ -1,6 +1,6 @@
-# point-et-perdu
+# Boulodrome
 
-This project is built with Vite, React, TypeScript, shadcn-ui and Tailwind CSS.
+Boulodrome is a pétanque management application built with Vite, React, TypeScript, shadcn-ui and Tailwind CSS.
 
 ## Development
 

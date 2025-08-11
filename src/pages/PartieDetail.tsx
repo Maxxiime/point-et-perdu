@@ -16,7 +16,7 @@ export default function PartieDetail() {
         <meta name="description" content="Détails complets de la partie de pétanque." />
       </Helmet>
       <Scoreboard partie={partie} />
+      <PhotoAnalyzer />
     </section>
-    <PhotoAnalyzer />
   );
 }

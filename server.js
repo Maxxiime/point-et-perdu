@@ -4,12 +4,10 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import { saveBase64AsJpeg } from './utils/image-store.mjs';
-import express from "express";
-import { router as analyzerRouter } from "./server/opencv-analyze.mjs";
+import { router as analyzerRouter } from './server/opencv-analyze.mjs';
 
 const app = express();
-app.use(analyzerRouter);
-app.listen(process.env.PORT || 8787);
+app.use(express.json({ limit: '10mb' }));
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'db.json');
@@ -34,9 +32,6 @@ async function saveData(data) {
 
 await ensureDataFile();
 
-const app = express();
-app.use(express.json({ limit: '10mb' }));
-
 // CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -48,6 +43,8 @@ app.use((req, res, next) => {
 
 app.use('/uploads', express.static('uploads'));
 app.use('/analyzed', express.static('public/analyzed'));
+
+app.use(analyzerRouter);
 
 app.get('/api/data', async (req, res) => {
   const data = await readData();

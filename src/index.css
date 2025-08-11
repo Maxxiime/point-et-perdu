@@ -1,13 +1,15 @@
+@import './theme.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
 
 @layer base {
-  :root {
+    :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
@@ -103,11 +105,9 @@ All colors MUST be HSL.
 @layer base {
   * {
     @apply border-border;
-  }
+    }
 
-  body {
-    @apply bg-background text-foreground;
+    body {
+      @apply bg-background text-foreground;
+    }
   }
-}
-
-@import './theme.css';

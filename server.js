@@ -4,7 +4,16 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import { saveBase64AsJpeg } from './utils/image-store.mjs';
-import { router as analyzerRouter } from './server/opencv-analyze.mjs';
+
+// Attempt to load the optional OpenCV-based analyzer. If the dependency is not
+// installed (e.g. opencv4nodejs is missing), the API routes provided by
+// `opencv-analyze.mjs` will simply not be mounted and a warning is logged.
+let analyzerRouter;
+try {
+  ({ router: analyzerRouter } = await import('./server/opencv-analyze.mjs'));
+} catch (err) {
+  console.warn('opencv4nodejs not installed; /api/analyze disabled');
+}
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -44,7 +53,7 @@ app.use((req, res, next) => {
 app.use('/uploads', express.static('uploads'));
 app.use('/analyzed', express.static('public/analyzed'));
 
-app.use(analyzerRouter);
+if (analyzerRouter) app.use(analyzerRouter);
 
 app.get('/api/data', async (req, res) => {
   const data = await readData();

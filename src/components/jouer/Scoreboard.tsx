@@ -67,7 +67,11 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
   };
   const onPhoto = () => fileRef.current?.click();
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
+    // Store the input reference immediately because React pools the event
+    // object and clears `currentTarget` after asynchronous operations. Using
+    // it after an `await` would otherwise throw because it becomes `null`.
+    const input = e.currentTarget;
+    const f = input.files?.[0];
     if (!f) return;
     try {
       const compressed = await imageCompression(f, {
@@ -83,7 +87,8 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
     } catch (err) {
       console.error(err);
     } finally {
-      e.currentTarget.value = "";
+      // Reset file input so the same file can be selected again if needed
+      input.value = "";
     }
   };
 

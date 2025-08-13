@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter as AlertFooter, AlertDialogHeader as AlertHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function Scoreboard({ partie }: { partie: Partie }) {
-  const { db, ajouterMene, editerMene, supprimerMene, terminerPartie, annulerPartie, likerPartie, commenterPartie, ajouterPhoto } = useData();
+  const { db, ajouterMene, editerMene, supprimerMene, terminerPartie, annulerPartie, likerPartie, commenterPartie, ajouterPhoto, supprimerPhoto } = useData();
   const [newPoints, setNewPoints] = useState<Record<string, string>>(() => Object.fromEntries(partie.equipes.map(e => [e.id, ""])));
   const [editingMene, setEditingMene] = useState<number | null>(null);
   const [editPoints, setEditPoints] = useState<Record<string, number>>({});
@@ -178,19 +178,30 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
           <h3 className="font-semibold">Photos</h3>
           <div className="grid grid-cols-3 gap-2">
             {partie.photos.map(ph => (
-              <button
-                key={ph.id}
-                type="button"
-                onClick={() => setViewPhoto(ph.url)}
-                className="w-full h-24 rounded overflow-hidden p-0 border-0 bg-transparent"
-              >
-                <img
-                  src={ph.url}
-                  alt="Photo de la partie de pétanque"
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </button>
+              <div key={ph.id} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setViewPhoto(ph.url)}
+                  className="w-full h-24 rounded overflow-hidden p-0 border-0 bg-transparent"
+                >
+                  <img
+                    src={ph.url}
+                    alt="Photo de la partie de pétanque"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </button>
+                {partie.etat === 'en_cours' && (
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute top-1 right-1"
+                    onClick={(e) => { e.stopPropagation(); if (window.confirm('Supprimer cette photo ?')) supprimerPhoto(partie.id, ph.id); }}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                )}
+              </div>
             ))}
           </div>
         </div>

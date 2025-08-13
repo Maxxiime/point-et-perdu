@@ -26,6 +26,7 @@ interface DataContextType {
   likerPartie: (partieId: ID) => void;
   commenterPartie: (partieId: ID, texte: string) => void;
   ajouterPhoto: (partieId: ID, dataUrl: string) => void;
+  supprimerPhoto: (partieId: ID, photoId: ID) => void;
   // Admin
   supprimerPartie: (partieId: ID) => void;
   reinitialiserStats: () => void;
@@ -246,6 +247,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       p.photos = [ph, ...p.photos];
     });
   };
+  const supprimerPhoto = (partieId: ID, photoId: ID) => {
+    avecPartie(partieId, (p) => {
+      p.photos = p.photos.filter(ph => ph.id !== photoId);
+    });
+  };
 
   // Admin
   const supprimerPartie = (partieId: ID) => {
@@ -309,6 +315,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     likerPartie,
     commenterPartie,
     ajouterPhoto,
+    supprimerPhoto,
     supprimerPartie,
     reinitialiserStats,
     exporterJSON,

@@ -6,13 +6,15 @@ import fs from 'node:fs/promises';
 import { saveBase64AsJpeg } from './utils/image-store.mjs';
 
 // Attempt to load the optional OpenCV-based analyzer. If the dependency is not
-// installed (e.g. opencv4nodejs is missing), the API routes provided by
+// installed (e.g. `opencv4nodejs` is missing), the native upload route from
 // `opencv-analyze.mjs` will simply not be mounted and a warning is logged.
 let analyzerRouter;
 try {
   ({ router: analyzerRouter } = await import('./server/opencv-analyze.mjs'));
 } catch (err) {
-  console.warn('opencv4nodejs not installed; /api/analyze disabled');
+  console.warn(
+    'opencv4nodejs not installed; using WebAssembly fallback. Install "opencv4nodejs" to enable the native /api/analyze route.'
+  );
 }
 
 const app = express();

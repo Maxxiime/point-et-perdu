@@ -192,14 +192,32 @@ export default function Scoreboard({ partie }: { partie: Partie }) {
                   />
                 </button>
                 {partie.etat === 'en_cours' && (
-                  <Button
-                    size="icon"
-                    variant="destructive"
-                    className="absolute top-1 right-1"
-                    onClick={(e) => { e.stopPropagation(); if (window.confirm('Supprimer cette photo ?')) supprimerPhoto(partie.id, ph.id); }}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-1 right-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertHeader>
+                        <AlertDialogTitle>Supprimer la photo ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Cette action supprimera définitivement la photo.
+                        </AlertDialogDescription>
+                      </AlertHeader>
+                      <AlertFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => supprimerPhoto(partie.id, ph.id)}>
+                          Supprimer
+                        </AlertDialogAction>
+                      </AlertFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </div>
             ))}

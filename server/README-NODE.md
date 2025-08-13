@@ -2,8 +2,9 @@
 
 ## Installation
 ```bash
-npm i express multer opencv4nodejs
-# Assurez-vous d'avoir OpenCV installé sur votre machine (libs + headers).
+npm i express multer opencv4nodejs@npm:@u4/opencv4nodejs
+# Assurez-vous d'avoir OpenCV installé sur votre machine (libs + headers) si la
+# distribution précompilée ne couvre pas votre plateforme.
 ```
 
 ## Lancer en standalone

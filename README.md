@@ -25,9 +25,10 @@ implementation using [opencv4nodejs](https://www.npmjs.com/package/opencv4nodejs
    ```bash
    sudo apt-get update && sudo apt-get install -y build-essential cmake libopencv-dev
    ```
-2. Install the Node binding:
+2. Install the Node binding (using the prebuilt `@u4` distribution to avoid
+   compiling OpenCV locally):
    ```bash
-   npm install opencv4nodejs
+   npm install opencv4nodejs@npm:@u4/opencv4nodejs
    ```
 3. Start the API server:
    ```bash

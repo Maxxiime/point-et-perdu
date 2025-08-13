@@ -11,10 +11,12 @@ import { saveBase64AsJpeg } from './utils/image-store.mjs';
 let analyzerRouter;
 try {
   ({ router: analyzerRouter } = await import('./server/opencv-analyze.mjs'));
+  console.log('opencv4nodejs analyzer enabled');
 } catch (err) {
   console.warn(
     'opencv4nodejs not installed; using WebAssembly fallback. Install "opencv4nodejs" to enable the native /api/analyze route.'
   );
+  if (err && err.message) console.warn('opencv4nodejs load failed:', err.message);
 }
 
 const app = express();
